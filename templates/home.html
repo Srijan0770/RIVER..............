@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RiverScan — Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --blue-dark: #0f2d5e;
+            --blue-mid:  #1a4a8a;
+            --blue-light:#2e7dd1;
+            --teal:      #0ea5c9;
+            --gold:      #f5c842;
+            --white:     #ffffff;
+            --text-muted:rgba(255,255,255,0.65);
+            --card-bg:   rgba(255,255,255,0.05);
+            --card-border: rgba(255,255,255,0.09);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--white);
+            min-height: 100vh;
+            background:
+                linear-gradient(rgba(7,26,58,0.82), rgba(7,26,58,0.92)),
+                url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1600&q=80')
+                center/cover no-repeat fixed;
+        }
+
+        /* ── NAV ── */
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 5%;
+            height: 68px;
+            background: rgba(15,45,94,0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.3rem;
+            font-weight: 800;
+            text-decoration: none;
+            color: var(--white);
+        }
+
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--teal), var(--blue-light));
+            border-radius: 10px;
+            display: grid;
+            place-items: center;
+            font-size: 1.1rem;
+        }
+
+        .nav-links { display: flex; list-style: none; gap: 2rem; }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover { color: var(--white); }
+
+        .nav-links a.active {
+            color: var(--teal);
+            font-weight: 700;
+        }
+
+        
+        .page {
+            padding: 100px 5% 60px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+     
+        .search-hero {
+            text-align: center;
+            padding: 3rem 0 2.5rem;
+        }
+
+        .search-hero h1 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 0.6rem;
+        }
+
+        .search-hero h1 span {
+            background: linear-gradient(90deg, var(--teal), var(--gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .search-hero p {
+            color: var(--text-muted);
+            font-size: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .search-form input {
+            padding: 14px 22px;
+            width: 340px;
+            border-radius: 50px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.08);
+            color: var(--white);
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .search-form input::placeholder { color: rgba(255,255,255,0.4); }
+
+        .search-form input:focus {
+            border-color: var(--teal);
+            background: rgba(255,255,255,0.12);
+        }
+
+        .search-form button {
+            padding: 14px 32px;
+            border-radius: 50px;
+            border: none;
+            background: linear-gradient(135deg, var(--teal), var(--blue-light));
+            color: var(--white);
+            font-size: 0.95rem;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            box-shadow: 0 6px 24px rgba(14,165,201,0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .search-form button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(14,165,201,0.55);
+        }
+
+       
+        .error-msg {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(239,68,68,0.15);
+            border: 1px solid rgba(239,68,68,0.4);
+            color: #fca5a5;
+            padding: 14px 20px;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+        }
+
+        
+        .results { margin-top: 2.5rem; }
+
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255,255,255,0.08);
+        }
+
+       
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 1.2rem 1.4rem;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+
+        .stat-card:hover {
+            border-color: rgba(14,165,201,0.35);
+            transform: translateY(-3px);
+        }
+
+        .stat-card .label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+        }
+
+        .stat-card .value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--white);
+        }
+
+        .stat-card .value.teal { color: var(--teal); }
+        .stat-card .value.gold { color: var(--gold); }
+
+       
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+
+        .info-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 1.4rem 1.6rem;
+        }
+
+        .info-card h3 {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--teal);
+            margin-bottom: 0.8rem;
+        }
+
+        .info-card .city-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 0.2rem;
+        }
+
+        .info-card .city-ph {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        
+        .table-wrap {
+            overflow-x: auto;
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            margin-bottom: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+
+        thead tr {
+            background: rgba(14,165,201,0.12);
+        }
+
+        th {
+            padding: 13px 16px;
+            text-align: left;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--teal);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.85);
+        }
+
+        tbody tr:hover { background: rgba(255,255,255,0.04); }
+
+        .badge-safe     { background: rgba(34,197,94,0.15);  color: #86efac; padding: 3px 10px; border-radius: 50px; font-size: 0.78rem; font-weight: 600; }
+        .badge-acidic   { background: rgba(239,68,68,0.15);  color: #fca5a5; padding: 3px 10px; border-radius: 50px; font-size: 0.78rem; font-weight: 600; }
+        .badge-alkaline { background: rgba(251,146,60,0.15); color: #fdba74; padding: 3px 10px; border-radius: 50px; font-size: 0.78rem; font-weight: 600; }
+
+   
+        .city-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-bottom: 2rem;
+        }
+
+        .city-pill {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 50px;
+            padding: 6px 16px;
+            font-size: 0.82rem;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .city-pill span {
+            color: var(--teal);
+            font-weight: 700;
+            margin-left: 4px;
+        }
+
+        /* ── PREDICTION SECTION ── */
+        .predict-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        .predict-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            padding: 1.4rem 1.5rem;
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .predict-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(14,165,201,0.4);
+        }
+
+        .predict-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+        }
+
+        .predict-card.safe::before     { background: linear-gradient(90deg,#22c55e,#86efac); }
+        .predict-card.acidic::before   { background: linear-gradient(90deg,#ef4444,#fca5a5); }
+        .predict-card.alkaline::before { background: linear-gradient(90deg,#f97316,#fdba74); }
+
+        .predict-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.8rem;
+        }
+
+        .predict-city {
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        .predict-ph {
+            font-size: 1.8rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .predict-ph.safe     { color: #51cf66; }
+        .predict-ph.acidic   { color: #ff6b6b; }
+        .predict-ph.alkaline { color: #ffa94d; }
+
+        .predict-badge {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 50px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            margin-bottom: 0.9rem;
+        }
+
+        .predict-badge.safe     { background: rgba(34,197,94,0.15);  color: #86efac; }
+        .predict-badge.acidic   { background: rgba(239,68,68,0.15);  color: #fca5a5; }
+        .predict-badge.alkaline { background: rgba(251,146,60,0.15); color: #fdba74; }
+
+        /* Annual rate row */
+        .rate-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 10px;
+            padding: 8px 12px;
+            margin-bottom: 1rem;
+            font-size: 0.82rem;
+        }
+
+        .rate-row .rate-lbl { color: var(--text-muted); }
+
+        .rate-row .rate-val {
+            font-weight: 800;
+            font-size: 1rem;
+            margin-left: auto;
+        }
+
+        .rate-val.rising   { color: #fca5a5; }
+        .rate-val.falling  { color: #86efac; }
+        .rate-val.stable   { color: rgba(255,255,255,0.45); }
+
+        /* Year table */
+        .yr-table-wrap {
+            overflow-x: auto;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.07);
+            margin-bottom: 1rem;
+        }
+
+        .yr-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+        }
+
+        .yr-table thead tr { background: rgba(14,165,201,0.1); }
+
+        .yr-table th {
+            padding: 7px 10px;
+            text-align: left;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--teal);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .yr-table td {
+            padding: 6px 10px;
+            border-top: 1px solid rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.8);
+        }
+
+        .yr-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+        /* Forecast boxes */
+        .forecast-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--teal);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .forecast-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+        }
+
+        .forecast-box {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 10px;
+            padding: 8px 6px;
+            text-align: center;
+        }
+
+        .forecast-box .f-year {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-bottom: 3px;
+        }
+
+        .forecast-box .f-ph {
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--white);
+        }
+
+        .forecast-box .f-badge {
+            font-size: 0.6rem;
+            font-weight: 700;
+            margin-top: 3px;
+            padding: 2px 6px;
+            border-radius: 50px;
+            display: inline-block;
+        }
+
+        .f-badge.safe     { background: rgba(34,197,94,0.15);  color: #86efac; }
+        .f-badge.acidic   { background: rgba(239,68,68,0.15);  color: #fca5a5; }
+        .f-badge.alkaline { background: rgba(251,146,60,0.15); color: #fdba74; }
+
+        /* gauge */
+        .gauge-wrap { margin-bottom: 0.9rem; }
+
+        .gauge-track {
+            background: rgba(255,255,255,0.08);
+            border-radius: 50px;
+            height: 7px;
+            position: relative;
+            overflow: visible;
+        }
+
+        .gauge-fill {
+            height: 100%;
+            border-radius: 50px;
+        }
+
+        .gauge-fill.safe     { background: linear-gradient(90deg,#22c55e,#86efac); }
+        .gauge-fill.acidic   { background: linear-gradient(90deg,#ef4444,#fca5a5); }
+        .gauge-fill.alkaline { background: linear-gradient(90deg,#f97316,#fdba74); }
+
+        .gauge-safe-zone {
+            position: absolute;
+            top: 0; bottom: 0;
+            left: 46.4%;
+            width: 14.3%;
+            background: rgba(34,197,94,0.18);
+            border-left:  1px dashed rgba(34,197,94,0.5);
+            border-right: 1px dashed rgba(34,197,94,0.5);
+        }
+
+        .gauge-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.62rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .trend-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 2px 10px;
+            border-radius: 50px;
+        }
+
+        .trend-tag.rising   { background: rgba(239,68,68,0.12);  color: #fca5a5; }
+        .trend-tag.falling  { background: rgba(34,197,94,0.12);  color: #86efac; }
+        .trend-tag.stable   { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.45); }
+
+        /* graphs */
+        .graphs-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .graph-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+
+        .graph-card:hover { border-color: rgba(14,165,201,0.35); }
+
+        .graph-label {
+            padding: 10px 16px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--teal);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            background: rgba(14,165,201,0.07);
+        }
+
+        .graph-card img {
+            width: 100%;
+            display: block;
+            border-radius: 0;
+        }
+
+        /* Map route button */
+        .map-route-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            background: linear-gradient(135deg, #0ea5c9, #2e7dd1);
+            color: #fff;
+            font-size: 0.92rem;
+            font-weight: 700;
+            border-radius: 50px;
+            text-decoration: none;
+            box-shadow: 0 6px 24px rgba(14,165,201,0.35);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .map-route-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 32px rgba(14,165,201,0.5);
+        }
+
+        /* ── HAMBURGER ── */
+        .nav-toggle {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            padding: 4px;
+            background: none;
+            border: none;
+        }
+
+        .nav-toggle span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: var(--white);
+            border-radius: 2px;
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.25);
+            border-top: 1px solid rgba(255,255,255,0.06);
+            margin-top: 2rem;
+        }
+
+        /* ── MOBILE RESPONSIVE ── */
+        @media (max-width: 768px) {
+            .nav-toggle { display: flex; }
+
+            .nav-links {
+                display: none;
+                position: fixed;
+                top: 68px; left: 0; right: 0;
+                flex-direction: column;
+                gap: 0;
+                background: rgba(10,30,70,0.98);
+                backdrop-filter: blur(16px);
+                border-bottom: 1px solid rgba(255,255,255,0.08);
+                padding: 1rem 0;
+                z-index: 99;
+            }
+
+            .nav-links.open { display: flex; }
+
+            .nav-links li a {
+                display: block;
+                padding: 12px 5%;
+                font-size: 1rem;
+                border-bottom: 1px solid rgba(255,255,255,0.05);
+            }
+
+            .page { padding: 90px 4% 40px; }
+
+            .search-form { flex-direction: column; align-items: stretch; }
+            .search-form input { width: 100%; }
+            .search-form button { width: 100%; }
+
+            .stat-grid { grid-template-columns: repeat(2, 1fr); }
+
+            .two-col { grid-template-columns: 1fr; }
+
+            .predict-grid { grid-template-columns: 1fr; }
+
+            .graphs-grid { max-width: 100%; }
+
+            .map-route-btn { width: 100%; justify-content: center; }
+
+            .section-title { font-size: 1.1rem; }
+
+            .forecast-row { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        @media (max-width: 400px) {
+            .stat-grid { grid-template-columns: 1fr 1fr; }
+            .forecast-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+   
+    <nav>
+        <a href="/" class="nav-logo">
+            <div class="logo-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C12 2 5 9.5 5 14a7 7 0 0 0 14 0C19 9.5 12 2 12 2Z" fill="url(#lg1)" opacity="0.9"/>
+                    <path d="M9 15.5c0 1.5 1.3 2.5 3 2.5" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+                    <defs>
+                        <linearGradient id="lg1" x1="12" y1="2" x2="12" y2="21" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#7ee8fa"/>
+                            <stop offset="100%" stop-color="#0ea5c9"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+            RiverScan
+        </a>
+        <ul class="nav-links" id="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/home/" class="active">Analysis</a></li>
+            <li><a href="/map/">Map</a></li>
+            <li><a href="/about/">About</a></li>
+        </ul>
+        <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+    </nav>
+
+    <div class="page">
+
+        <div class="search-hero">
+            <h1>River <span>Quality Analysis</span></h1>
+            <p><h3>A Machine Learning-Based Approach for Real-Time Water Quality Monitoring and Analysis</h3></p>
+            <p>Enter a river name to get a full water quality breakdown</p>
+
+            <form method="post" class="search-form">
+                {% csrf_token %}
+                <input type="text" name="river_name" placeholder="e.g. Ganga,Yamuna,Kaveri,Brahmaputra.... " autocomplete="off">
+                <button type="submit">Analyze →</button>
+            </form>
+        </div>
+
+     
+        {% if error %}
+        <div class="error-msg">
+            ⚠️ {{ error }}
+        </div>
+        {% endif %}
+
+        <!-- RESULTS -->
+        {% if summary %}
+        <div class="results">
+
+            <!-- Summary stats -->
+            <div class="section-title">📋 Summary — {{ summary.matched_name }}</div>
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="label">Avg pH</div>
+                    <div class="value teal">{{ summary.avg_ph }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Min pH</div>
+                    <div class="value">{{ summary.min_ph }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Max pH</div>
+                    <div class="value">{{ summary.max_ph }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Cities</div>
+                    <div class="value gold">{{ summary.total_cities }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Locations</div>
+                    <div class="value">{{ summary.total_locations }}</div>
+                </div>
+            </div>
+
+            <!-- View Route on Map button -->
+            <div style="margin-bottom:2rem;">
+                <a href="/map/?river={{ matched_name }}" class="map-route-btn">
+                    🗺️ View {{ summary.matched_name }} River Route on Map →
+                </a>
+            </div>
+
+            <!-- Best / Worst city -->
+            <div class="section-title">🏙️ City Analysis</div>
+            <div class="two-col">
+                <div class="info-card">
+                    <h3>✅ Best Quality City</h3>
+                    <div class="city-name">{{ city_analysis.best_city }}</div>
+                    <div class="city-ph">pH = {{ city_analysis.best_ph }}</div>
+                </div>
+                <div class="info-card">
+                    <h3>⚠️ Worst Quality City</h3>
+                    <div class="city-name">{{ city_analysis.worst_city }}</div>
+                    <div class="city-ph">pH = {{ city_analysis.worst_ph }}</div>
+                </div>
+            </div>
+
+            <!-- City count pills -->
+            <div class="section-title">📍 Readings per City</div>
+            <div class="city-pills">
+                {% for city, count in city_count %}
+                <div class="city-pill">{{ city }}<span>{{ count }}</span></div>
+                {% endfor %}
+            </div>
+
+            <!-- Table -->
+            <div class="section-title">📄 Detailed pH Table</div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>River</th>
+                            <th>City</th>
+                            <th>pH</th>
+                            <th>Quality</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in table_data %}
+                        <tr>
+                            <td>{{ row.RIVER }}</td>
+                            <td>{{ row.CITY }}</td>
+                            <td>{{ row.PH }}</td>
+                            <td>
+                                {% if "Safe" in row.PH_QUALITY %}
+                                    <span class="badge-safe">{{ row.PH_QUALITY }}</span>
+                                {% elif "Acidic" in row.PH_QUALITY %}
+                                    <span class="badge-acidic">{{ row.PH_QUALITY }}</span>
+                                {% else %}
+                                    <span class="badge-alkaline">{{ row.PH_QUALITY }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Graphs -->
+            <div class="section-title">📈 Graphs</div>
+            <div class="graphs-grid">
+                {% for graph_url, graph_label in graphs %}
+                <div class="graph-card">
+                    <div class="graph-label">{{ graph_label }}</div>
+                    <img src="{{ graph_url }}" alt="{{ graph_label }}">
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- City-wise pH Prediction -->
+            <div class="section-title">🔮 City-wise pH Prediction (Year-over-Year)</div>
+            <div class="predict-grid">
+                {% for p in city_predictions %}
+
+                {% if "Safe" in p.quality %}
+                <div class="predict-card safe">
+                    <div class="predict-header">
+                        <div>
+                            <div class="predict-city">{{ p.city }}</div>
+                            <div class="predict-badge safe">{{ p.quality }}</div>
+                        </div>
+                        <div class="predict-ph safe">{{ p.avg_ph }}</div>
+                    </div>
+                    <div class="gauge-wrap">
+                        <div class="gauge-track">
+                            <div class="gauge-safe-zone"></div>
+                            <div class="gauge-fill safe" style="width:{{ p.gauge_pct }}%;"></div>
+                        </div>
+                        <div class="gauge-labels"><span>pH 0</span><span>Safe: 6.5–8.5</span><span>pH 14</span></div>
+                    </div>
+                    <div class="rate-row">
+                        <span class="rate-lbl">📅 Annual pH change rate</span>
+                        <span class="rate-val {{ p.trend }}">{% if p.trend == "rising" %}↑{% elif p.trend == "falling" %}↓{% else %}→{% endif %} {{ p.pct_sign }}{{ p.pct_per_year }}% / yr</span>
+                    </div>
+                    <div class="yr-table-wrap">
+                        <table class="yr-table">
+                            <thead><tr><th>Year</th><th>pH (fitted)</th><th>Status</th></tr></thead>
+                            <tbody>
+                                {% for row in p.year_table %}
+                                <tr>
+                                    <td>{{ row.year }}</td>
+                                    <td>{{ row.ph }}</td>
+                                    <td>{% if "Safe" in row.quality %}<span class="badge-safe">Safe</span>{% elif "Acidic" in row.quality %}<span class="badge-acidic">Acidic</span>{% else %}<span class="badge-alkaline">Alkaline</span>{% endif %}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="forecast-title">🔭 Forecast</div>
+                    <div class="forecast-row">
+                        {% for f in p.forecasts %}
+                        <div class="forecast-box">
+                            <div class="f-year">{{ f.year }}</div>
+                            <div class="f-ph">{{ f.ph }}</div>
+                            {% if "Safe" in f.quality %}<div class="f-badge safe">Safe</div>{% elif "Acidic" in f.quality %}<div class="f-badge acidic">Acidic</div>{% else %}<div class="f-badge alkaline">Alkaline</div>{% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {% elif "Acidic" in p.quality %}
+                <div class="predict-card acidic">
+                    <div class="predict-header">
+                        <div>
+                            <div class="predict-city">{{ p.city }}</div>
+                            <div class="predict-badge acidic">{{ p.quality }}</div>
+                        </div>
+                        <div class="predict-ph acidic">{{ p.avg_ph }}</div>
+                    </div>
+                    <div class="gauge-wrap">
+                        <div class="gauge-track">
+                            <div class="gauge-safe-zone"></div>
+                            <div class="gauge-fill acidic" style="width:{{ p.gauge_pct }}%;"></div>
+                        </div>
+                        <div class="gauge-labels"><span>pH 0</span><span>Safe: 6.5–8.5</span><span>pH 14</span></div>
+                    </div>
+                    <div class="rate-row">
+                        <span class="rate-lbl">📅 Annual pH change rate</span>
+                        <span class="rate-val {{ p.trend }}">{% if p.trend == "rising" %}↑{% elif p.trend == "falling" %}↓{% else %}→{% endif %} {{ p.pct_sign }}{{ p.pct_per_year }}% / yr</span>
+                    </div>
+                    <div class="yr-table-wrap">
+                        <table class="yr-table">
+                            <thead><tr><th>Year</th><th>pH (fitted)</th><th>Status</th></tr></thead>
+                            <tbody>
+                                {% for row in p.year_table %}
+                                <tr>
+                                    <td>{{ row.year }}</td>
+                                    <td>{{ row.ph }}</td>
+                                    <td>{% if "Safe" in row.quality %}<span class="badge-safe">Safe</span>{% elif "Acidic" in row.quality %}<span class="badge-acidic">Acidic</span>{% else %}<span class="badge-alkaline">Alkaline</span>{% endif %}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="forecast-title">🔭 Forecast</div>
+                    <div class="forecast-row">
+                        {% for f in p.forecasts %}
+                        <div class="forecast-box">
+                            <div class="f-year">{{ f.year }}</div>
+                            <div class="f-ph">{{ f.ph }}</div>
+                            {% if "Safe" in f.quality %}<div class="f-badge safe">Safe</div>{% elif "Acidic" in f.quality %}<div class="f-badge acidic">Acidic</div>{% else %}<div class="f-badge alkaline">Alkaline</div>{% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {% else %}
+                <div class="predict-card alkaline">
+                    <div class="predict-header">
+                        <div>
+                            <div class="predict-city">{{ p.city }}</div>
+                            <div class="predict-badge alkaline">{{ p.quality }}</div>
+                        </div>
+                        <div class="predict-ph alkaline">{{ p.avg_ph }}</div>
+                    </div>
+                    <div class="gauge-wrap">
+                        <div class="gauge-track">
+                            <div class="gauge-safe-zone"></div>
+                            <div class="gauge-fill alkaline" style="width:{{ p.gauge_pct }}%;"></div>
+                        </div>
+                        <div class="gauge-labels"><span>pH 0</span><span>Safe: 6.5–8.5</span><span>pH 14</span></div>
+                    </div>
+                    <div class="rate-row">
+                        <span class="rate-lbl">📅 Annual pH change rate</span>
+                        <span class="rate-val {{ p.trend }}">{% if p.trend == "rising" %}↑{% elif p.trend == "falling" %}↓{% else %}→{% endif %} {{ p.pct_sign }}{{ p.pct_per_year }}% / yr</span>
+                    </div>
+                    <div class="yr-table-wrap">
+                        <table class="yr-table">
+                            <thead><tr><th>Year</th><th>pH (fitted)</th><th>Status</th></tr></thead>
+                            <tbody>
+                                {% for row in p.year_table %}
+                                <tr>
+                                    <td>{{ row.year }}</td>
+                                    <td>{{ row.ph }}</td>
+                                    <td>{% if "Safe" in row.quality %}<span class="badge-safe">Safe</span>{% elif "Acidic" in row.quality %}<span class="badge-acidic">Acidic</span>{% else %}<span class="badge-alkaline">Alkaline</span>{% endif %}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="forecast-title">🔭 Forecast</div>
+                    <div class="forecast-row">
+                        {% for f in p.forecasts %}
+                        <div class="forecast-box">
+                            <div class="f-year">{{ f.year }}</div>
+                            <div class="f-ph">{{ f.ph }}</div>
+                            {% if "Safe" in f.quality %}<div class="f-badge safe">Safe</div>{% elif "Acidic" in f.quality %}<div class="f-badge acidic">Acidic</div>{% else %}<div class="f-badge alkaline">Alkaline</div>{% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% endfor %}
+            </div>
+
+        </div>
+            <div class="closing-note" style="text-align: center;">
+                <div class="closing-divider"></div>
+                <h2 class="closing-thanks">✨ Thank You ✨</h2>
+                <p class="closing-sub">More features coming soon...</p>
+            </div>
+
+        {% endif %}
+
+    </div>
+
+    <footer>© 2026 RiverScan · River pH Analysis System</footer>
+
+    <script>
+        document.getElementById('nav-toggle').addEventListener('click', function() {
+            document.getElementById('nav-links').classList.toggle('open');
+        });
+    </script>
+
+</body>
+</html>

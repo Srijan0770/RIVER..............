@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: riverpulse
+    env: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn river_django.wsgi:application"
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: PYTHON_VERSION
+        value: "3.12.0"

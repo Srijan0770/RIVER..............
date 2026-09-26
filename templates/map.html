@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RiverPulse — Water Quality Map</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --teal:  #0ea5c9;
+            --gold:  #f5c842;
+            --white: #ffffff;
+            --muted: rgba(255,255,255,0.65);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #071a3a;
+            color: var(--white);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* NAV */
+        nav {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 5%;
+            height: 64px;
+            background: rgba(15,45,94,0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            z-index: 1000;
+        }
+
+        .nav-logo {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 1.2rem; font-weight: 800;
+            text-decoration: none; color: var(--white);
+        }
+
+        .logo-icon {
+            width: 34px; height: 34px;
+            background: linear-gradient(135deg, var(--teal), #2e7dd1);
+            border-radius: 9px; display: grid; place-items: center;
+        }
+
+        .nav-links { display: flex; list-style: none; gap: 2rem; }
+
+        .nav-links a {
+            color: var(--muted); text-decoration: none;
+            font-size: 0.88rem; font-weight: 500; transition: color 0.2s;
+        }
+
+        .nav-links a:hover  { color: var(--white); }
+        .nav-links a.active { color: var(--teal); font-weight: 700; }
+
+        /* TOOLBAR */
+        .toolbar {
+            flex-shrink: 0;
+            display: flex; align-items: center; gap: 0.8rem;
+            padding: 8px 5%;
+            background: rgba(7,26,58,0.97);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            flex-wrap: wrap;
+        }
+
+        .toolbar-title {
+            font-size: 0.92rem; font-weight: 700; margin-right: auto;
+        }
+
+        .toolbar-title span {
+            background: linear-gradient(90deg, var(--teal), var(--gold));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .filter-btn {
+            padding: 5px 14px; border-radius: 50px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.06);
+            color: var(--white); font-size: 0.78rem; font-weight: 600;
+            font-family: 'Inter', sans-serif; cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .filter-btn:hover        { background: rgba(255,255,255,0.12); }
+        .filter-btn.active-all   { background: rgba(14,165,201,0.25); border-color: var(--teal); color: var(--teal); }
+        .filter-btn.active-safe  { background: rgba(34,197,94,0.2);   border-color: #22c55e; color: #86efac; }
+        .filter-btn.active-acid  { background: rgba(239,68,68,0.2);   border-color: #ef4444; color: #fca5a5; }
+        .filter-btn.active-alk   { background: rgba(251,146,60,0.2);  border-color: #f97316; color: #fdba74; }
+
+        .back-btn {
+            padding: 5px 14px; border-radius: 50px;
+            border: 1px solid rgba(14,165,201,0.4);
+            background: rgba(14,165,201,0.12);
+            color: var(--teal); font-size: 0.78rem; font-weight: 600;
+            font-family: 'Inter', sans-serif; cursor: pointer;
+            text-decoration: none; transition: background 0.2s;
+        }
+
+        .back-btn:hover { background: rgba(14,165,201,0.22); }
+
+        .count-badge {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 50px; padding: 4px 12px;
+            font-size: 0.72rem; color: var(--muted);
+        }
+
+        .count-badge strong { color: var(--white); }
+
+        /* MAP */
+        .map-wrap { flex: 1; position: relative; overflow: hidden; }
+        #map { width: 100%; height: 100%; }
+
+        /* ROUTE INFO PANEL */
+        .route-panel {
+            position: absolute;
+            top: 12px; left: 12px;
+            z-index: 900;
+            background: rgba(7,26,58,0.94);
+            border: 1px solid rgba(14,165,201,0.35);
+            border-radius: 16px;
+            padding: 16px 18px;
+            backdrop-filter: blur(12px);
+            min-width: 200px;
+            max-width: 240px;
+            display: none;
+        }
+
+        .route-panel.visible { display: block; }
+
+        .rp-river {
+            font-size: 1rem; font-weight: 800;
+            color: var(--teal); margin-bottom: 4px;
+        }
+
+        .rp-sub {
+            font-size: 0.68rem; color: var(--muted);
+            text-transform: uppercase; letter-spacing: 0.07em;
+            margin-bottom: 12px;
+        }
+
+        .rp-stat { margin-bottom: 8px; }
+
+        .rp-stat .rp-lbl {
+            font-size: 0.65rem; text-transform: uppercase;
+            letter-spacing: 0.07em; color: var(--muted); margin-bottom: 2px;
+        }
+
+        .rp-stat .rp-val {
+            font-size: 1.1rem; font-weight: 800; color: var(--white);
+        }
+
+        .rp-val.teal   { color: var(--teal); }
+        .rp-val.green  { color: #51cf66; }
+        .rp-val.red    { color: #ff6b6b; }
+        .rp-val.orange { color: #ffa94d; }
+
+        .rp-divider { height: 1px; background: rgba(255,255,255,0.07); margin: 10px 0; }
+
+        .rp-city-list { max-height: 160px; overflow-y: auto; }
+
+        .rp-city-item {
+            display: flex; justify-content: space-between;
+            align-items: center; padding: 4px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 0.78rem;
+        }
+
+        .rp-city-item:last-child { border-bottom: none; }
+
+        .rp-city-name { color: rgba(255,255,255,0.85); }
+
+        .rp-city-ph { font-weight: 700; font-size: 0.82rem; }
+
+        .rp-city-ph.safe     { color: #51cf66; }
+        .rp-city-ph.acidic   { color: #ff6b6b; }
+        .rp-city-ph.alkaline { color: #ffa94d; }
+
+        /* STATS PANEL (all-cities mode) */
+        .stats-panel {
+            position: absolute;
+            top: 12px; left: 12px;
+            z-index: 900;
+            background: rgba(7,26,58,0.92);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 14px;
+            padding: 14px 18px;
+            backdrop-filter: blur(10px);
+            display: flex; flex-direction: column; gap: 8px;
+            min-width: 150px;
+        }
+
+        .stat-item { text-align: center; }
+
+        .stat-item .s-val { font-size: 1.4rem; font-weight: 800; }
+        .stat-item .s-lbl { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+
+        .s-val.teal   { color: var(--teal); }
+        .s-val.green  { color: #51cf66; }
+        .s-val.red    { color: #ff6b6b; }
+        .s-val.orange { color: #ffa94d; }
+
+        /* LEGEND */
+        .legend {
+            position: absolute; bottom: 28px; right: 12px;
+            z-index: 900;
+            background: rgba(7,26,58,0.92);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 14px; padding: 14px 18px;
+            backdrop-filter: blur(10px); min-width: 170px;
+        }
+
+        .legend h4 {
+            font-size: 0.7rem; text-transform: uppercase;
+            letter-spacing: 0.08em; color: var(--teal); margin-bottom: 10px;
+        }
+
+        .legend-item {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 7px; font-size: 0.78rem;
+            color: rgba(255,255,255,0.85);
+        }
+
+        .legend-dot {
+            width: 13px; height: 13px; border-radius: 50%;
+            flex-shrink: 0; border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .dot-safe     { background: #22c55e; }
+        .dot-acidic   { background: #ef4444; }
+        .dot-alkaline { background: #f97316; }
+
+        .legend-line {
+            width: 24px; height: 3px; border-radius: 2px;
+            flex-shrink: 0; background: #0ea5c9;
+        }
+
+        .legend-divider { height: 1px; background: rgba(255,255,255,0.07); margin: 8px 0; }
+        .legend-note { font-size: 0.66rem; color: var(--muted); line-height: 1.5; }
+
+        /* LEAFLET POPUP */
+        .leaflet-popup-content-wrapper {
+            background: #0d2347 !important;
+            border: 1px solid rgba(255,255,255,0.12) !important;
+            border-radius: 12px !important;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+            color: #fff !important;
+        }
+
+        .leaflet-popup-tip { background: #0d2347 !important; }
+        .leaflet-popup-content { margin: 14px 16px !important; }
+
+        .popup-city  { font-size: 1rem; font-weight: 800; margin-bottom: 2px; }
+        .popup-river { font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-bottom: 8px; }
+        .popup-ph    { font-size: 1.6rem; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+        .popup-badge { display: inline-block; padding: 2px 10px; border-radius: 50px; font-size: 0.72rem; font-weight: 700; margin-bottom: 8px; }
+        .popup-meta  { font-size: 0.72rem; color: rgba(255,255,255,0.5); }
+
+        .pb-safe     { background: rgba(34,197,94,0.2);  color: #86efac; }
+        .pb-acidic   { background: rgba(239,68,68,0.2);  color: #fca5a5; }
+        .pb-alkaline { background: rgba(251,146,60,0.2); color: #fdba74; }
+
+        .ph-safe     { color: #51cf66; }
+        .ph-acidic   { color: #ff6b6b; }
+        .ph-alkaline { color: #ffa94d; }
+
+        /* ── MOBILE RESPONSIVE ── */
+        @media (max-width: 768px) {
+            nav { padding: 0 4%; }
+
+            .nav-toggle {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+                cursor: pointer;
+                padding: 4px;
+                background: none;
+                border: none;
+            }
+
+            .nav-toggle span {
+                display: block;
+                width: 22px;
+                height: 2px;
+                background: #fff;
+                border-radius: 2px;
+            }
+
+            .nav-links {
+                display: none;
+                position: fixed;
+                top: 64px; left: 0; right: 0;
+                flex-direction: column;
+                gap: 0;
+                background: rgba(10,30,70,0.98);
+                backdrop-filter: blur(16px);
+                border-bottom: 1px solid rgba(255,255,255,0.08);
+                padding: 1rem 0;
+                z-index: 999;
+            }
+
+            .nav-links.open { display: flex; }
+
+            .nav-links li a {
+                display: block;
+                padding: 12px 5%;
+                font-size: 1rem;
+                border-bottom: 1px solid rgba(255,255,255,0.05);
+            }
+
+            .toolbar { padding: 8px 4%; gap: 0.5rem; }
+            .toolbar-title { width: 100%; font-size: 0.85rem; }
+            #filter-btns { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+            .filter-btn { font-size: 0.72rem; padding: 4px 10px; }
+
+            .stats-panel, .route-panel {
+                top: auto;
+                bottom: 80px;
+                left: 8px;
+                right: 8px;
+                max-width: none;
+                min-width: unset;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: space-around;
+            }
+
+            .route-panel { flex-direction: column; max-height: 50vh; overflow-y: auto; }
+
+            .rp-city-list { max-height: 120px; }
+
+            .legend {
+                bottom: 8px;
+                right: 8px;
+                padding: 10px 14px;
+                min-width: unset;
+            }
+
+            .legend h4 { margin-bottom: 6px; }
+            .legend-item { font-size: 0.72rem; margin-bottom: 4px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+    <a href="/" class="nav-logo">
+        <div class="logo-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2C12 2 5 9.5 5 14a7 7 0 0 0 14 0C19 9.5 12 2 12 2Z" fill="url(#lgm)"/>
+                <path d="M9 15.5c0 1.5 1.3 2.5 3 2.5" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+                <defs>
+                    <linearGradient id="lgm" x1="12" y1="2" x2="12" y2="21" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stop-color="#7ee8fa"/>
+                        <stop offset="100%" stop-color="#0ea5c9"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+        </div>
+        RiverPulse
+    </a>
+    <ul class="nav-links" id="nav-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/home/">Analysis</a></li>
+        <li><a href="/map/" class="active">Map</a></li>
+        <li><a href="/about/">About</a></li>
+    </ul>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+    </button>
+</nav>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+    <div class="toolbar-title" id="toolbar-title">
+        River Water Quality <span>Map</span>
+    </div>
+
+    <div id="filter-btns">
+        <button class="filter-btn active-all" onclick="filterMarkers('all', this)">🌍 All</button>
+        <button class="filter-btn" onclick="filterMarkers('Normal (Safe)', this)">🟢 Safe</button>
+        <button class="filter-btn" onclick="filterMarkers('Acidic (Unsafe)', this)">🔴 Acidic</button>
+        <button class="filter-btn" onclick="filterMarkers('Alkaline (Unsafe)', this)">🟠 Alkaline</button>
+    </div>
+
+    <div class="count-badge">Showing <strong id="visible-count">0</strong> cities</div>
+    <a href="/map/" class="back-btn" id="clear-route-btn" style="display:none;">✕ Clear Route</a>
+</div>
+
+<!-- MAP -->
+<div class="map-wrap">
+    <div id="map"></div>
+
+    <!-- Route info panel (shown when ?river= is set) -->
+    <div class="route-panel" id="route-panel">
+        <div class="rp-river" id="rp-river-name"></div>
+        <div class="rp-sub">River Route</div>
+        <div class="rp-stat">
+            <div class="rp-lbl">Cities on route</div>
+            <div class="rp-val teal" id="rp-cities">0</div>
+        </div>
+        <div class="rp-stat">
+            <div class="rp-lbl">Avg pH</div>
+            <div class="rp-val" id="rp-avg-ph">—</div>
+        </div>
+        <div class="rp-stat">
+            <div class="rp-lbl">Safe cities</div>
+            <div class="rp-val green" id="rp-safe">0</div>
+        </div>
+        <div class="rp-stat">
+            <div class="rp-lbl">Unsafe cities</div>
+            <div class="rp-val red" id="rp-unsafe">0</div>
+        </div>
+        <div class="rp-divider"></div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.07em;">City stops</div>
+        <div class="rp-city-list" id="rp-city-list"></div>
+    </div>
+
+    <!-- Stats panel (all-cities mode) -->
+    <div class="stats-panel" id="stats-panel">
+        <div class="stat-item">
+            <div class="s-val teal" id="stat-total">0</div>
+            <div class="s-lbl">Total Cities</div>
+        </div>
+        <div style="height:1px;background:rgba(255,255,255,0.07);"></div>
+        <div class="stat-item">
+            <div class="s-val green" id="stat-safe">0</div>
+            <div class="s-lbl">Safe</div>
+        </div>
+        <div class="stat-item">
+            <div class="s-val red" id="stat-acidic">0</div>
+            <div class="s-lbl">Acidic</div>
+        </div>
+        <div class="stat-item">
+            <div class="s-val orange" id="stat-alkaline">0</div>
+            <div class="s-lbl">Alkaline</div>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+        <h4>pH Quality</h4>
+        <div class="legend-item"><div class="legend-dot dot-safe"></div> Normal / Safe (6.5–8.5)</div>
+        <div class="legend-item"><div class="legend-dot dot-acidic"></div> Acidic — Unsafe (&lt; 6.5)</div>
+        <div class="legend-item"><div class="legend-dot dot-alkaline"></div> Alkaline — Unsafe (&gt; 8.5)</div>
+        <div class="legend-divider"></div>
+        <div class="legend-item" id="legend-route-row" style="display:none;">
+            <div class="legend-line"></div> River route path
+        </div>
+        <div class="legend-note">Click any marker<br>for city details</div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    // ── Data ──
+    const ALL_DATA = {{ markers_json|safe }};
+
+    // ── Read ?river= param ──
+    const urlParams  = new URLSearchParams(window.location.search);
+    const riverParam = (urlParams.get('river') || '').trim();
+
+    // ── Map init ──
+    const map = L.map('map', {
+        center: [20.5937, 78.9629],
+        zoom: 5,
+        zoomControl: true,
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap &copy; CARTO',
+        subdomains: 'abcd',
+        maxZoom: 19,
+    }).addTo(map);
+
+    // ── Colour helpers ──
+    const COLOR = {
+        'Normal (Safe)':     '#22c55e',
+        'Acidic (Unsafe)':   '#ef4444',
+        'Alkaline (Unsafe)': '#f97316',
+    };
+
+    const BADGE_CLS = {
+        'Normal (Safe)':     'pb-safe',
+        'Acidic (Unsafe)':   'pb-acidic',
+        'Alkaline (Unsafe)': 'pb-alkaline',
+    };
+
+    const PH_CLS = {
+        'Normal (Safe)':     'ph-safe',
+        'Acidic (Unsafe)':   'ph-acidic',
+        'Alkaline (Unsafe)': 'ph-alkaline',
+    };
+
+    function makeIcon(quality, highlighted) {
+        const color = COLOR[quality] || '#aaa';
+        const size  = highlighted ? 34 : 26;
+        const r     = highlighted ? 8  : 6;
+        const h     = Math.round(size * 1.28);
+        const opacity = highlighted ? 1 : 0.35;
+        const svg = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${h}" viewBox="0 0 ${size} ${h}">
+                <path d="M${size/2} 0C${size*0.224} 0 0 ${size*0.224} 0 ${size/2}
+                         c0 ${size*0.333} ${size/2} ${size*0.786} ${size/2} ${size*0.786}
+                         S${size} ${size*0.833} ${size} ${size/2}
+                         C${size} ${size*0.224} ${size*0.776} 0 ${size/2} 0z"
+                      fill="${color}" opacity="${opacity}"/>
+                <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="white" opacity="${highlighted ? 0.95 : 0.5}"/>
+            </svg>`;
+        return L.divIcon({
+            html: svg,
+            className: '',
+            iconSize:   [size, h],
+            iconAnchor: [size/2, h],
+            popupAnchor:[0, -(h+4)],
+        });
+    }
+
+    function popupHtml(d) {
+        const quality  = d.quality || 'Normal (Safe)';
+        const badgeCls = BADGE_CLS[quality] || 'pb-safe';
+        const phCls    = PH_CLS[quality]    || 'ph-safe';
+        return `
+            <div class="popup-city">${d.CITY}</div>
+            <div class="popup-river">🌊 ${d.RIVER} River</div>
+            <div class="popup-ph ${phCls}">${d.avg_ph}</div>
+            <div class="popup-badge ${badgeCls}">${quality}</div>
+            <div class="popup-meta">
+                📍 ${Number(d.lat).toFixed(4)}, ${Number(d.lon).toFixed(4)}<br>
+                📊 ${d.readings} reading${d.readings !== 1 ? 's' : ''}
+            </div>`;
+    }
+
+    // ── Build all markers ──
+    const allMarkers = [];
+    let routePolyline = null;
+
+    ALL_DATA.forEach(d => {
+        if (!d.lat || !d.lon) return;
+        const isRouteCity = riverParam &&
+            d.RIVER.toLowerCase() === riverParam.toLowerCase();
+        const marker = L.marker([d.lat, d.lon], {
+            icon: makeIcon(d.quality, isRouteCity),
+        }).bindPopup(popupHtml(d));
+        marker._quality = d.quality;
+        marker._river   = d.RIVER;
+        marker._data    = d;
+        allMarkers.push(marker);
+        marker.addTo(map);
+    });
+
+    // ── Route mode ──
+    if (riverParam) {
+        // Show route panel, hide stats panel, show clear btn
+        document.getElementById('route-panel').classList.add('visible');
+        document.getElementById('stats-panel').style.display = 'none';
+        document.getElementById('clear-route-btn').style.display = 'inline-flex';
+        document.getElementById('filter-btns').style.display = 'none';
+        document.getElementById('legend-route-row').style.display = 'flex';
+
+        // Update toolbar title
+        document.getElementById('toolbar-title').innerHTML =
+            `🌊 <span>${riverParam}</span> River Route`;
+
+        // Get route cities sorted by longitude (west → east, approximate flow)
+        const routeCities = ALL_DATA
+            .filter(d => d.RIVER.toLowerCase() === riverParam.toLowerCase() && d.lat && d.lon)
+            .sort((a, b) => a.lon - b.lon);
+
+        const routeCoords = routeCities.map(d => [d.lat, d.lon]);
+
+        // Draw animated dashed polyline
+        if (routeCoords.length >= 2) {
+            routePolyline = L.polyline(routeCoords, {
+                color:     '#0ea5c9',
+                weight:    4,
+                opacity:   0.85,
+                dashArray: '10, 8',
+                lineJoin:  'round',
+            }).addTo(map);
+
+            // Fit map to route with padding
+            map.fitBounds(routePolyline.getBounds().pad(0.25));
+        } else if (routeCoords.length === 1) {
+            map.setView(routeCoords[0], 8);
+        }
+
+        // Populate route info panel
+        document.getElementById('rp-river-name').textContent = riverParam + ' River';
+        document.getElementById('rp-cities').textContent = routeCities.length;
+
+        const avgPh = routeCities.length
+            ? (routeCities.reduce((s, d) => s + d.avg_ph, 0) / routeCities.length).toFixed(2)
+            : '—';
+        document.getElementById('rp-avg-ph').textContent = avgPh;
+
+        const safe   = routeCities.filter(d => d.quality === 'Normal (Safe)').length;
+        const unsafe = routeCities.length - safe;
+        document.getElementById('rp-safe').textContent   = safe;
+        document.getElementById('rp-unsafe').textContent = unsafe;
+
+        // City list
+        const listEl = document.getElementById('rp-city-list');
+        routeCities.forEach((d, i) => {
+            const cls = d.quality === 'Normal (Safe)'    ? 'safe'
+                      : d.quality === 'Acidic (Unsafe)'  ? 'acidic'
+                      : 'alkaline';
+            listEl.innerHTML += `
+                <div class="rp-city-item">
+                    <span class="rp-city-name">${i+1}. ${d.CITY}</span>
+                    <span class="rp-city-ph ${cls}">${d.avg_ph}</span>
+                </div>`;
+        });
+
+        // Update visible count
+        document.getElementById('visible-count').textContent = routeCities.length;
+
+    } else {
+        // Normal all-cities mode
+        updateStats(allMarkers);
+    }
+
+    // ── Stats (all-cities mode) ──
+    function updateStats(visible) {
+        const safe     = visible.filter(m => m._quality === 'Normal (Safe)').length;
+        const acidic   = visible.filter(m => m._quality === 'Acidic (Unsafe)').length;
+        const alkaline = visible.filter(m => m._quality === 'Alkaline (Unsafe)').length;
+        document.getElementById('stat-total').textContent    = visible.length;
+        document.getElementById('stat-safe').textContent     = safe;
+        document.getElementById('stat-acidic').textContent   = acidic;
+        document.getElementById('stat-alkaline').textContent = alkaline;
+        document.getElementById('visible-count').textContent = visible.length;
+    }
+
+    // ── Filter (all-cities mode only) ──
+    function filterMarkers(quality, btn) {
+        document.querySelectorAll('.filter-btn').forEach(b => b.className = 'filter-btn');
+        if (quality === 'all')                  btn.classList.add('active-all');
+        else if (quality === 'Normal (Safe)')   btn.classList.add('active-safe');
+        else if (quality === 'Acidic (Unsafe)') btn.classList.add('active-acid');
+        else                                    btn.classList.add('active-alk');
+
+        const visible = [];
+        allMarkers.forEach(m => {
+            if (quality === 'all' || m._quality === quality) {
+                m.addTo(map); visible.push(m);
+            } else {
+                map.removeLayer(m);
+            }
+        });
+
+        updateStats(visible);
+        if (visible.length > 0) {
+            map.fitBounds(L.featureGroup(visible).getBounds().pad(0.1));
+        }
+    }
+</script>
+
+    <script>
+        document.getElementById('nav-toggle').addEventListener('click', function() {
+            document.getElementById('nav-links').classList.toggle('open');
+        });
+    </script>
+
+</body>
+</html>

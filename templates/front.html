@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RiverScan — River pH Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --blue-dark: #0f2d5e;
+            --blue-mid:  #1a4a8a;
+            --blue-light:#2e7dd1;
+            --teal:      #0ea5c9;
+            --gold:      #f5c842;
+            --white:     #ffffff;
+            --text-muted:rgba(255,255,255,0.75);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--blue-dark);
+            color: var(--white);
+            overflow-x: hidden;
+        }
+
+        /* ── NAV ── */
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 5%;
+            height: 68px;
+            background: rgba(15, 45, 94, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.3rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            text-decoration: none;
+            color: var(--white);
+        }
+
+        .nav-logo .logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--teal), var(--blue-light));
+            border-radius: 10px;
+            display: grid;
+            place-items: center;
+            font-size: 1.1rem;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover { color: var(--white); }
+
+        .nav-cta {
+            background: var(--gold);
+            color: var(--blue-dark) !important;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-weight: 700 !important;
+            transition: opacity 0.2s !important;
+        }
+
+        .nav-cta:hover { opacity: 0.85; color: var(--blue-dark) !important; }
+
+        /* ── HERO ── */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 100px 5% 160px;
+            background:
+                radial-gradient(ellipse 80% 60% at 50% 0%, rgba(46,125,209,0.35) 0%, transparent 70%),
+                linear-gradient(180deg, #0f2d5e 0%, #071a3a 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* animated floating orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.18;
+            animation: drift 12s ease-in-out infinite alternate;
+        }
+        .orb-1 { width: 500px; height: 500px; background: var(--teal);   top: -100px; left: -150px; animation-delay: 0s; }
+        .orb-2 { width: 400px; height: 400px; background: var(--blue-light); bottom: 0; right: -100px; animation-delay: -4s; }
+        .orb-3 { width: 300px; height: 300px; background: var(--gold);   top: 40%;  left: 60%; animation-delay: -8s; }
+
+        @keyframes drift {
+            from { transform: translate(0, 0) scale(1); }
+            to   { transform: translate(30px, 20px) scale(1.08); }
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(14,165,201,0.15);
+            border: 1px solid rgba(14,165,201,0.4);
+            color: var(--teal);
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 6px 16px;
+            border-radius: 50px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badge::before { content: '●'; font-size: 0.5rem; animation: pulse 2s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.3; }
+        }
+
+        .hero h1 {
+            font-size: clamp(2.6rem, 6vw, 4.5rem);
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -1.5px;
+            margin-bottom: 1.2rem;
+            position: relative;
+        }
+
+        .hero h1 span {
+            background: linear-gradient(90deg, var(--teal), var(--gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            max-width: 560px;
+            margin: 0 auto 2.5rem;
+            font-weight: 300;
+            line-height: 1.7;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 4rem;
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, var(--teal), var(--blue-light));
+            color: var(--white);
+            padding: 15px 36px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1rem;
+            box-shadow: 0 8px 30px rgba(14,165,201,0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(14,165,201,0.55);
+        }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: var(--white);
+            padding: 15px 36px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+
+        .btn-secondary:hover { background: rgba(255,255,255,0.13); }
+
+        /* stats row */
+        .stats {
+            display: flex;
+            gap: 3rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .stat { text-align: center; }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--white), var(--teal));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-top: 2px;
+        }
+
+        /* ── WAVE ── */
+        .wave-divider {
+            position: absolute;
+            bottom: -2px; left: 0; right: 0;
+            line-height: 0;
+        }
+
+        /* ── FEATURES ── */
+        .features {
+            background: #071a3a;
+            padding: 90px 5%;
+        }
+
+        .section-label {
+            text-align: center;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--teal);
+            margin-bottom: 0.75rem;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 3.5rem;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 2rem;
+            transition: transform 0.25s, border-color 0.25s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(14,165,201,0.4);
+        }
+
+        .card-icon {
+            width: 52px; height: 52px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            font-size: 1.5rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .icon-blue  { background: rgba(46,125,209,0.2); }
+        .icon-teal  { background: rgba(14,165,201,0.2); }
+        .icon-gold  { background: rgba(245,200,66,0.2); }
+        .icon-green { background: rgba(34,197,94,0.2);  }
+
+        .card h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .card p {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            line-height: 1.65;
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            background: #040e20;
+            text-align: center;
+            padding: 2rem;
+            font-size: 0.82rem;
+            color: rgba(255,255,255,0.35);
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+
+        /* ── HAMBURGER ── */
+        .nav-toggle {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            padding: 4px;
+            background: none;
+            border: none;
+        }
+
+        .nav-toggle span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: var(--white);
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            .nav-toggle { display: flex; }
+
+            .nav-links {
+                display: none;
+                position: fixed;
+                top: 68px; left: 0; right: 0;
+                flex-direction: column;
+                gap: 0;
+                background: rgba(10,30,70,0.98);
+                backdrop-filter: blur(16px);
+                border-bottom: 1px solid rgba(255,255,255,0.08);
+                padding: 1rem 0;
+                z-index: 99;
+            }
+
+            .nav-links.open { display: flex; }
+
+            .nav-links li a {
+                display: block;
+                padding: 12px 5%;
+                font-size: 1rem;
+                border-bottom: 1px solid rgba(255,255,255,0.05);
+            }
+
+            .nav-cta {
+                margin: 0.8rem 5%;
+                text-align: center;
+                border-radius: 12px !important;
+                display: block;
+            }
+
+            .hero { padding: 100px 5% 100px; }
+            .stats { gap: 1.5rem; }
+
+            .btn-primary, .btn-secondary {
+                padding: 13px 24px;
+                font-size: 0.92rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero h1 { letter-spacing: -0.5px; }
+            .features { padding: 60px 5%; }
+            .cards { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAV -->
+    <nav>
+        <a href="/" class="nav-logo">
+            <div class="logo-icon">🧪</div>
+            RiverPulse
+        </a>
+        <ul class="nav-links" id="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/home/">Analysis</a></li>
+            <li><a href="/map/">Map</a></li>
+            <li><a href="/about/">About</a></li>
+            <li><a href="/home/" class="nav-cta">Start Analysis →</a></li>
+        </ul>
+        <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+
+        <div class="badge">Live Water Quality Monitoring</div>
+
+        <h1>River <span>Water Quality <br>Analysis</span></h1>
+
+        <p>Monitor, analyze, and visualize the water quality of rivers across multiple cities — with precision and speed.</p>
+
+        <div class="hero-actions">
+            <a href="/home/" class="btn-primary">
+                Start Analysis
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                </svg>
+            </a>
+            <a href="#features" class="btn-secondary">Learn More</a>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value">pH 0–14</div>
+                <div class="stat-label">Full Scale Coverage</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">Multi-City</div>
+                <div class="stat-label">Comparative Analysis</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">Instant</div>
+                <div class="stat-label">Graph Generation</div>
+            </div>
+        </div>
+
+        <div class="wave-divider">
+            <svg viewBox="0 0 1440 80" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                <path d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" fill="#071a3a"/>
+            </svg>
+        </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="features" id="features">
+        <p class="section-label">What we offer</p>
+        <h2 class="section-title">Everything you need to understand river health</h2>
+
+        <div class="cards">
+            <div class="card">
+                <div class="card-icon icon-teal">📊</div>
+                <h3>pH Summary Stats</h3>
+                <p>Get average, min, and max pH values across all sampled locations in a river instantly.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon icon-blue">🗺️</div>
+                <h3>City-wise Breakdown</h3>
+                <p>Compare water quality across cities — identify the best and worst performing locations at a glance.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon icon-gold">📈</div>
+                <h3>Auto-generated Graphs</h3>
+                <p>Visual charts are generated automatically for each pH quality category, making trends easy to spot.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon icon-green">✅</div>
+                <h3>Safety Classification</h3>
+                <p>Each reading is classified as Safe, Acidic, or Alkaline so you always know the water's status.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        Build by: Srijan Kumar Jana,Arindam Bera,Kartick Garai,Chandrajit Mallik <br>
+            Contact Details: 6296554485
+        
+    </footer>
+
+    <script>
+        document.getElementById('nav-toggle').addEventListener('click', function() {
+            document.getElementById('nav-links').classList.toggle('open');
+        });
+    </script>
+
+</body>
+</html>

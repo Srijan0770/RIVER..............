@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RiverScan — About</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --blue-dark: #0f2d5e;
+            --blue-mid:  #1a4a8a;
+            --blue-light:#2e7dd1;
+            --teal:      #0ea5c9;
+            --gold:      #f5c842;
+            --white:     #ffffff;
+            --text-muted:rgba(255,255,255,0.65);
+            --card-bg:   rgba(255,255,255,0.05);
+            --card-border: rgba(255,255,255,0.09);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--white);
+            min-height: 100vh;
+            background: linear-gradient(180deg, #0f2d5e 0%, #071a3a 100%);
+        }
+
+        /* NAV */
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 5%;
+            height: 68px;
+            background: rgba(15,45,94,0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.3rem;
+            font-weight: 800;
+            text-decoration: none;
+            color: var(--white);
+        }
+
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--teal), var(--blue-light));
+            border-radius: 10px;
+            display: grid;
+            place-items: center;
+            font-size: 1.1rem;
+        }
+
+        .nav-links { display: flex; list-style: none; gap: 2rem; }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover { color: var(--white); }
+        .nav-links a.active { color: var(--teal); font-weight: 700; }
+
+        .nav-cta {
+            background: var(--gold);
+            color: var(--blue-dark) !important;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-weight: 700 !important;
+        }
+
+        /* PAGE */
+        .page {
+            padding: 110px 5% 80px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* HERO */
+        .about-hero {
+            text-align: center;
+            padding: 3rem 0 4rem;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(14,165,201,0.15);
+            border: 1px solid rgba(14,165,201,0.4);
+            color: var(--teal);
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 6px 16px;
+            border-radius: 50px;
+            margin-bottom: 1.5rem;
+        }
+
+        .about-hero h1 {
+            font-size: clamp(2.2rem, 5vw, 3.5rem);
+            font-weight: 800;
+            letter-spacing: -1px;
+            line-height: 1.15;
+            margin-bottom: 1.2rem;
+        }
+
+        .about-hero h1 span {
+            background: linear-gradient(90deg, var(--teal), var(--gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .about-hero p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.75;
+            font-weight: 300;
+        }
+
+        /* SECTION */
+        .section { margin-bottom: 3.5rem; }
+
+        .section-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--teal);
+            margin-bottom: 0.5rem;
+        }
+
+        .section h2 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 1rem;
+        }
+
+        .section p {
+            color: var(--text-muted);
+            line-height: 1.75;
+            font-size: 0.97rem;
+        }
+
+        /* CARDS */
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.2rem;
+            margin-top: 1.5rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            padding: 1.6rem;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(14,165,201,0.4);
+        }
+
+        .card-icon {
+            font-size: 1.8rem;
+            margin-bottom: 0.9rem;
+        }
+
+        .card h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+        }
+
+        .card p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        /* PH SCALE */
+        .ph-scale {
+            display: flex;
+            border-radius: 14px;
+            overflow: hidden;
+            margin-top: 1.5rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .ph-block {
+            flex: 1;
+            padding: 1.1rem 1rem;
+            text-align: center;
+        }
+
+        .ph-block .range {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: 0.3rem;
+        }
+
+        .ph-block .label { font-size: 0.78rem; opacity: 0.85; }
+
+        .ph-acidic   { background: rgba(239,68,68,0.2);  border: 1px solid rgba(239,68,68,0.3);  color: #fca5a5; border-radius: 14px 0 0 14px; }
+        .ph-safe     { background: rgba(34,197,94,0.2);  border: 1px solid rgba(34,197,94,0.3);  color: #86efac; }
+        .ph-alkaline { background: rgba(251,146,60,0.2); border: 1px solid rgba(251,146,60,0.3); color: #fdba74; border-radius: 0 14px 14px 0; }
+
+        /* TECH STACK */
+        .tech-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.7rem;
+            margin-top: 1.2rem;
+        }
+
+        .tech-pill {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 50px;
+            padding: 7px 18px;
+            font-size: 0.83rem;
+            color: rgba(255,255,255,0.8);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tech-pill span { color: var(--teal); font-weight: 700; }
+
+        /* CTA */
+        .cta-box {
+            background: linear-gradient(135deg, rgba(14,165,201,0.15), rgba(46,125,209,0.1));
+            border: 1px solid rgba(14,165,201,0.3);
+            border-radius: 20px;
+            padding: 2.5rem;
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .cta-box h2 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin-bottom: 0.6rem;
+        }
+
+        .cta-box p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, var(--teal), var(--blue-light));
+            color: var(--white);
+            padding: 14px 32px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.95rem;
+            box-shadow: 0 6px 24px rgba(14,165,201,0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(14,165,201,0.55);
+        }
+
+        /* FOOTER */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.25);
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+
+        /* ── HAMBURGER ── */
+        .nav-toggle {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            padding: 4px;
+            background: none;
+            border: none;
+        }
+
+        .nav-toggle span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: var(--white);
+            border-radius: 2px;
+        }
+
+        @media (max-width: 768px) {
+            .nav-toggle { display: flex; }
+
+            .nav-links {
+                display: none;
+                position: fixed;
+                top: 68px; left: 0; right: 0;
+                flex-direction: column;
+                gap: 0;
+                background: rgba(10,30,70,0.98);
+                backdrop-filter: blur(16px);
+                border-bottom: 1px solid rgba(255,255,255,0.08);
+                padding: 1rem 0;
+                z-index: 99;
+            }
+
+            .nav-links.open { display: flex; }
+
+            .nav-links li a {
+                display: block;
+                padding: 12px 5%;
+                font-size: 1rem;
+                border-bottom: 1px solid rgba(255,255,255,0.05);
+            }
+
+            .nav-cta {
+                margin: 0.8rem 5%;
+                text-align: center;
+                border-radius: 12px !important;
+                display: block;
+            }
+
+            .page { padding: 90px 4% 60px; }
+            .cards { grid-template-columns: 1fr; }
+            .tech-list { gap: 0.5rem; }
+            .cta-box { padding: 1.8rem 1.2rem; }
+            .about-hero { padding: 2rem 0 2.5rem; }
+        }
+
+        @media (max-width: 640px) {
+            .ph-scale { flex-direction: column; }
+            .ph-acidic { border-radius: 14px 14px 0 0; }
+            .ph-alkaline { border-radius: 0 0 14px 14px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAV -->
+    <nav>
+        <a href="/" class="nav-logo">
+            <div class="logo-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C12 2 5 9.5 5 14a7 7 0 0 0 14 0C19 9.5 12 2 12 2Z" fill="url(#lg3)" opacity="0.9"/>
+                    <path d="M9 15.5c0 1.5 1.3 2.5 3 2.5" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+                    <defs>
+                        <linearGradient id="lg3" x1="12" y1="2" x2="12" y2="21" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#7ee8fa"/>
+                            <stop offset="100%" stop-color="#0ea5c9"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+            RiverScan
+        </a>
+        <ul class="nav-links" id="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/predict/">Predict</a></li>
+            <li><a href="/about/" class="active">About</a></li>
+            <li><a href="/home/" class="nav-cta">Start Analysis →</a></li>
+        </ul>
+        <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+    </nav>
+
+    <div class="page">
+
+        <!-- HERO -->
+        <div class="about-hero">
+            <div class="badge">About RiverScan</div>
+            <h1>Understanding <span>River Water Quality</span><br>Through Data</h1>
+            <p>RiverScan turns raw pH readings into actionable insights — helping researchers, analysts, and environmentalists make sense of river health across cities.</p>
+        </div>
+
+        <!-- WHAT IS IT -->
+        <div class="section">
+            <div class="section-label">The Project</div>
+            <h2>What is RiverScan?</h2>
+            <p>RiverScan is a web-based water quality analysis tool that processes river pH data from a structured CSV dataset. Search for any river by name and instantly get a full breakdown — summary statistics, city-wise comparisons, safety classifications, and auto-generated visualizations.</p>
+        </div>
+
+        <!-- HOW IT WORKS -->
+        <div class="section">
+            <div class="section-label">How It Works</div>
+            <h2>From search to insight in seconds</h2>
+            <div class="cards">
+                <div class="card">
+                    <div class="card-icon">🔍</div>
+                    <h3>Fuzzy Search</h3>
+                    <p>Type any river name — even with typos. RapidFuzz matches your input against the dataset using similarity scoring.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">📊</div>
+                    <h3>Data Processing</h3>
+                    <p>Pandas aggregates pH readings by city, computing averages, min/max values, and reading counts per location.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">📈</div>
+                    <h3>Chart Generation</h3>
+                    <p>Matplotlib renders line graphs, bar charts, pie charts, and category breakdowns — saved as PNGs and served instantly.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">✅</div>
+                    <h3>Safety Report</h3>
+                    <p>Every reading is classified and the best/worst cities are surfaced so you can act on the data right away.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- PH SCALE -->
+        <div class="section">
+            <div class="section-label">Classification</div>
+            <h2>pH Safety Scale</h2>
+            <p>RiverScan classifies every pH reading into one of three categories based on WHO drinking water guidelines.</p>
+            <div class="ph-scale">
+                <div class="ph-block ph-acidic">
+                    <div class="range">pH &lt; 6.5</div>
+                    <div class="label">Acidic (Unsafe)</div>
+                </div>
+                <div class="ph-block ph-safe">
+                    <div class="range">6.5 – 8.5</div>
+                    <div class="label">Normal (Safe)</div>
+                </div>
+                <div class="ph-block ph-alkaline">
+                    <div class="range">pH &gt; 8.5</div>
+                    <div class="label">Alkaline (Unsafe)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TECH STACK -->
+        <div class="section">
+            <div class="section-label">Built With</div>
+            <h2>Tech Stack</h2>
+            <p>A lightweight Python stack — no heavy ML frameworks, just clean data processing and visualization.</p>
+            <div class="tech-list">
+                <div class="tech-pill"><span>🐍</span> Python</div>
+                <div class="tech-pill"><span>🌐</span> Django</div>
+                <div class="tech-pill"><span>🐼</span> Pandas</div>
+                <div class="tech-pill"><span>📉</span> Matplotlib</div>
+                <div class="tech-pill"><span>🔎</span> RapidFuzz</div>
+                <div class="tech-pill"><span>🗄️</span> SQLite</div>
+                <div class="tech-pill"><span>📄</span> CSV Dataset</div>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="cta-box">
+            <h2>Ready to explore river data?</h2>
+            <p>Search any river and get a full water quality report in seconds.</p>
+            <a href="/home/" class="btn-primary">
+                Start Analysis
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                </svg>
+            </a>
+        </div>
+
+    </div>
+
+    <footer>© 2026 RiverScan · River pH Analysis System</footer>
+
+    <script>
+        document.getElementById('nav-toggle').addEventListener('click', function() {
+            document.getElementById('nav-links').classList.toggle('open');
+        });
+    </script>
+
+</body>
+</html>
