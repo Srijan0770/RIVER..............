@@ -1,5 +1,7 @@
 import os
 import uuid
+import base64
+import io
 import pandas as pd
 import numpy as np
 from rapidfuzz import process, fuzz
@@ -10,6 +12,16 @@ import json
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+
+
+def _fig_to_base64(fig):
+    """Convert a matplotlib figure to a base64 PNG data URI."""
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', bbox_inches='tight')
+    buf.seek(0)
+    encoded = base64.b64encode(buf.read()).decode('utf-8')
+    plt.close(fig)
+    return f"data:image/png;base64,{encoded}"
 
 
 # ── Dataset ──
@@ -134,15 +146,7 @@ def home(request):
         city_ph = results.groupby("CITY")["PH"].mean().sort_values()
         ph_counts = results["PH_QUALITY"].value_counts()
 
-        # ── Graphs ──
-        graph_dir = os.path.join(settings.BASE_DIR, "analysis", "static", "graphs")
-        os.makedirs(graph_dir, exist_ok=True)
-
-        for f in os.listdir(graph_dir):
-            if f.endswith(".png"):
-                os.remove(os.path.join(graph_dir, f))
-
-        uid = str(uuid.uuid4())[:8]
+        # ── Graphs (base64 — works on read-only filesystems like Vercel) ──
         graphs = []
 
         ph_colors = {
@@ -152,53 +156,35 @@ def home(request):
         }
 
         # 1. Line Graph — pH Trend
-        g1 = f"line_{uid}.png"
-        plt.figure(figsize=(10, 5))
-        plt.plot(city_ph.index, city_ph.values, marker='o', color='#0ea5c9')
-        plt.xlabel("City")
-        plt.ylabel("Average pH")
-        plt.title(f"City-wise Average pH of {matched_name} River")
-        plt.xticks(rotation=45, ha="right")
-        plt.grid(True)
-        plt.tight_layout()
-        plt.savefig(os.path.join(graph_dir, g1))
-        plt.close()
-        graphs.append((f"/static/graphs/{g1}", "pH Trend (Line)"))
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.plot(city_ph.index, city_ph.values, marker='o', color='#0ea5c9')
+        ax.set_xlabel("City"); ax.set_ylabel("Average pH")
+        ax.set_title(f"City-wise Average pH of {matched_name} River")
+        ax.tick_params(axis='x', rotation=45)
+        ax.grid(True)
+        fig.tight_layout()
+        graphs.append((_fig_to_base64(fig), "pH Trend (Line)"))
 
         # 2. Bar Graph with safe pH reference lines
-        g2 = f"bar_{uid}.png"
-        plt.figure(figsize=(10, 5))
-        plt.bar(city_ph.index, city_ph.values, width=0.5, color='#2e7dd1')
-        plt.axhline(y=6.5, color='red',   linestyle='--', label='Min Safe pH (6.5)')
-        plt.axhline(y=8.5, color='green', linestyle='--', label='Max Safe pH (8.5)')
-        plt.xlabel("City")
-        plt.ylabel("Average pH")
-        plt.title(f"City-wise Average pH of {matched_name} River")
-        plt.xticks(rotation=45, ha="right")
-        plt.legend()
-        plt.grid(axis='y')
-        plt.tight_layout()
-        plt.savefig(os.path.join(graph_dir, g2))
-        plt.close()
-        graphs.append((f"/static/graphs/{g2}", "pH Comparison (Bar with Safe Range)"))
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.bar(city_ph.index, city_ph.values, width=0.5, color='#2e7dd1')
+        ax.axhline(y=6.5, color='red',   linestyle='--', label='Min Safe pH (6.5)')
+        ax.axhline(y=8.5, color='green', linestyle='--', label='Max Safe pH (8.5)')
+        ax.set_xlabel("City"); ax.set_ylabel("Average pH")
+        ax.set_title(f"City-wise Average pH of {matched_name} River")
+        ax.tick_params(axis='x', rotation=45)
+        ax.legend(); ax.grid(axis='y')
+        fig.tight_layout()
+        graphs.append((_fig_to_base64(fig), "pH Comparison (Bar with Safe Range)"))
 
         # 3. Pie Chart — Quality Distribution
-        g3 = f"pie_{uid}.png"
         pie_colors = [ph_colors.get(lbl, "#aaa") for lbl in ph_counts.index]
-        plt.figure(figsize=(8, 6))
-        plt.pie(
-            ph_counts.values,
-            labels=ph_counts.index,
-            autopct="%1.1f%%",
-            startangle=90,
-            colors=pie_colors,
-            wedgeprops={"edgecolor": "black"},
-        )
-        plt.title(f"pH Quality Distribution of {matched_name} River")
-        plt.tight_layout()
-        plt.savefig(os.path.join(graph_dir, g3))
-        plt.close()
-        graphs.append((f"/static/graphs/{g3}", "Quality Distribution (Pie)"))
+        fig, ax = plt.subplots(figsize=(8, 6))
+        ax.pie(ph_counts.values, labels=ph_counts.index, autopct="%1.1f%%",
+               startangle=90, colors=pie_colors, wedgeprops={"edgecolor": "black"})
+        ax.set_title(f"pH Quality Distribution of {matched_name} River")
+        fig.tight_layout()
+        graphs.append((_fig_to_base64(fig), "Quality Distribution (Pie)"))
 
         # 4. Per-category ranked bar charts
         grouped = results.groupby(["PH_QUALITY", "CITY"]).size().reset_index(name="COUNT")
@@ -206,20 +192,15 @@ def home(request):
             subset = grouped[grouped["PH_QUALITY"] == category].sort_values("COUNT", ascending=False)
             if subset.empty:
                 continue
-            safe_cat = category.replace(" ", "_").replace("(", "").replace(")", "")
-            g_cat = f"cat_{safe_cat}_{uid}.png"
-            plt.figure(figsize=(10, 5))
-            plt.bar(subset["CITY"], subset["COUNT"],
-                    color=ph_colors.get(category, "#aaa"), width=0.5)
-            plt.xlabel("City")
-            plt.ylabel("Number of Readings")
-            plt.title(f"{category} — Cities Ranked for {matched_name} River")
-            plt.xticks(rotation=45, ha="right")
-            plt.grid(axis='y')
-            plt.tight_layout()
-            plt.savefig(os.path.join(graph_dir, g_cat))
-            plt.close()
-            graphs.append((f"/static/graphs/{g_cat}", f"{category} — City Readings"))
+            fig, ax = plt.subplots(figsize=(10, 5))
+            ax.bar(subset["CITY"], subset["COUNT"],
+                   color=ph_colors.get(category, "#aaa"), width=0.5)
+            ax.set_xlabel("City"); ax.set_ylabel("Number of Readings")
+            ax.set_title(f"{category} — Cities Ranked for {matched_name} River")
+            ax.tick_params(axis='x', rotation=45)
+            ax.grid(axis='y')
+            fig.tight_layout()
+            graphs.append((_fig_to_base64(fig), f"{category} — City Readings"))
 
         
         BASE_YEAR  = 2015
