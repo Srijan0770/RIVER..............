@@ -2,7 +2,7 @@ services:
   - type: web
     name: riverpulse
     env: python
-    buildCommand: "./build.sh"
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput"
     startCommand: "gunicorn river_django.wsgi:application"
     envVars:
       - key: SECRET_KEY
